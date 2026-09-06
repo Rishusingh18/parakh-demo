@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { sandboxApi } from '../services/sandboxApi';
 import type { AuditEntry } from '../data/mockData';
-import { SectionHeader, Skeleton } from '../components/ui';
+import { SectionHeader } from '../components/ui';
 
 const outcomeColor = (o: AuditEntry['outcome']) => ({
   SUCCESS: 'text-[#047857]', WARNING: 'text-[#D97706]', CRITICAL: 'text-[#B91C1C]',
@@ -50,8 +50,11 @@ export const AuditLog: React.FC = () => {
   const handleExport = async () => {
     setExporting(true);
     await new Promise(r => setTimeout(r, 1200));
-    // Simulate CSV download
-    const csv = ['ID,Timestamp,Bid No,Vendor,Officer,Action,Outcome', ...filtered.map(e => `${e.id},${e.timestamp},${e.bidNo},${e.vendorName},${e.officerName},${e.action},${e.outcome}`)].join('\n');
+    const escapeCsv = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+    const csv = [
+      ['ID', 'Timestamp', 'Bid No', 'Vendor', 'Officer', 'Action', 'Outcome'].map(escapeCsv).join(','),
+      ...filtered.map(e => [e.id, e.timestamp, e.bidNo, e.vendorName, e.officerName, e.action, e.outcome].map(escapeCsv).join(',')),
+    ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

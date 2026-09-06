@@ -3,48 +3,20 @@ import { Link } from 'react-router-dom';
 
 export const Header: React.FC = () => {
   const [searchVal, setSearchVal] = useState('');
-  const [lang, setLang] = useState<'EN' | 'HI'>('EN');
+  const [role, setRole] = useState<'ADMIN' | 'VIEWER'>(() => localStorage.getItem('officerRole') as any || 'ADMIN');
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRole = e.target.value as 'ADMIN' | 'VIEWER';
+    setRole(newRole);
+    localStorage.setItem('officerRole', newRole);
+    window.dispatchEvent(new Event('roleChange'));
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-header">
       {/* Tricolor Bar */}
       <div className="tricolor-bar" />
 
-      {/* Top Utility Bar */}
-      <div className="bg-[#EFF4FF] px-4 py-1 flex items-center justify-between border-b border-[#DDE9FF] text-[11px] font-bold uppercase tracking-widest text-[#44474E]">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">account_balance</span>
-            भारत सरकार | Government of India
-          </span>
-          <span className="hidden md:inline text-[#C4C6CF]">|</span>
-          <span className="hidden md:inline">Ministry of Commerce &amp; Industry / MeitY – GeM SPV</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <button className="hover:text-[#0B2545] transition-colors text-xs font-bold" title="Decrease font size">A-</button>
-            <button className="hover:text-[#0B2545] transition-colors text-sm font-bold" title="Normal font size">A</button>
-            <button className="hover:text-[#0B2545] transition-colors text-base font-bold" title="Increase font size">A+</button>
-          </div>
-          <span className="text-[#C4C6CF]">|</span>
-          <button className="flex items-center gap-1 hover:text-[#0B2545] transition-colors">
-            <span className="material-symbols-outlined text-[14px]">record_voice_over</span>
-            <span className="hidden sm:inline">Screen Reader</span>
-          </button>
-          <span className="text-[#C4C6CF]">|</span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setLang('EN')}
-              className={`cursor-pointer transition-colors ${lang === 'EN' ? 'underline text-[#0B2545] font-bold' : 'text-[#44474E] hover:text-[#0B2545]'}`}
-            >EN</button>
-            <span>/</span>
-            <button
-              onClick={() => setLang('HI')}
-              className={`cursor-pointer transition-colors ${lang === 'HI' ? 'underline text-[#0B2545] font-bold' : 'text-[#44474E] hover:text-[#0B2545]'}`}
-            >हिंदी</button>
-          </div>
-        </div>
-      </div>
 
       {/* Main Header */}
       <div className="h-16 px-4 flex items-center justify-between gap-4">
@@ -89,14 +61,18 @@ export const Header: React.FC = () => {
 
           <div className="h-8 w-px bg-[#DDE9FF] hidden sm:block" />
 
-          {/* Officer Profile */}
+          {/* Officer Profile Dropdown */}
           <div className="flex items-center gap-2">
-            <div className="text-right hidden sm:flex flex-col">
-              <span className="text-[13px] font-semibold text-[#0D1C2F] leading-tight">Rajesh Varma, IAS</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#44474E]">Director General (Procurement)</span>
-            </div>
+            <select
+              value={role}
+              onChange={handleRoleChange}
+              className="text-[13px] font-semibold text-[#0D1C2F] bg-transparent border-none focus:ring-0 cursor-pointer text-right outline-none"
+            >
+              <option value="ADMIN">Rajesh Varma, IAS (Admin)</option>
+              <option value="VIEWER">Priya Sharma (Viewer)</option>
+            </select>
             <div className="w-8 h-8 rounded-full bg-[#0B2545] flex items-center justify-center text-white font-bold text-sm ring-2 ring-[#C4C6CF]">
-              RV
+              {role === 'ADMIN' ? 'RV' : 'PS'}
             </div>
           </div>
         </div>

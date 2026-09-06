@@ -7,6 +7,7 @@ const navItems = [
   { path: '/connectors', icon: 'hub', label: 'Govt Connectors', hindi: 'सरकारी पोर्टल एकीकरण' },
   { path: '/rules', icon: 'rule', label: 'Eligibility & Rules', hindi: 'पात्रता एवं मूल्यांकन नियम' },
   { path: '/audit', icon: 'policy', label: 'Audit & Vigilance', hindi: 'सतर्कता एवं लेखा परीक्षा' },
+  { path: '/sandbox', icon: 'database', label: 'Sandbox Databases', hindi: 'सैंडबॉक्स डेटाबेस एक्सप्लोरर' },
 ];
 
 export const Sidebar: React.FC = () => {

@@ -9,6 +9,8 @@ import type { Bid, Tender, GovtConnector, EligibilityRule, AuditEntry } from '..
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const jitter = (base: number, range: number) => base + Math.floor(Math.random() * range);
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export const sandboxApi = {
   // ── Tenders ──────────────────────────────────────────────
   async getTenders(): Promise<Tender[]> {
@@ -32,9 +34,35 @@ export const sandboxApi = {
     return mockBids.find(b => b.id === bidId) ?? null;
   },
 
-  async updateBidDecision(bidId: string, decision: 'QUALIFY' | 'DISQUALIFY' | 'FLAG', notes: string): Promise<{ success: boolean; timestamp: string }> {
-    await delay(jitter(800, 500));
-    // In a real system this would persist to backend
+  async updateBidDecision(bidId: string, decision: 'QUALIFY' | 'DISQUALIFY' | 'FLAG', notes: string, bidData: any, evidenceHash: string): Promise<{ success: boolean; timestamp: string }> {
+    const role = localStorage.getItem('officerRole') || 'ADMIN';
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/audit/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Officer-Role': role
+        },
+        body: JSON.stringify({
+          bid_id: bidId,
+          bid_no: bidData.bidNo,
+          vendor_name: bidData.vendorName,
+          action: 'DECISION_RECORDED',
+          detail: notes || 'No notes provided',
+          evidence_hash: evidenceHash || 'manual',
+          risk_level: bidData.riskLevel,
+          outcome: decision,
+          idempotency_key: evidenceHash
+        })
+      });
+      if (!res.ok) {
+        throw new Error('Authorization failed');
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+
     const bid = mockBids.find(b => b.id === bidId);
     if (bid) {
       bid.officerNotes = notes;
@@ -43,6 +71,15 @@ export const sandboxApi = {
       else bid.status = 'UNDER_REVIEW';
     }
     return { success: true, timestamp: new Date().toISOString() };
+  },
+
+  async extractAI(tenderId: string, bidId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/v1/ai/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tender_id: tenderId, bid_id: bidId })
+    });
+    return await res.json();
   },
 
   // ── Govt API Connector Checks ─────────────────────────────
@@ -56,17 +93,17 @@ export const sandboxApi = {
     }));
   },
 
-  async verifyGSTIN(gstin: string): Promise<{ status: string; entityName: string; registrationDate: string; returnsFiled: number }> {
+  async verifyGSTIN(_gstin: string): Promise<{ status: string; entityName: string; registrationDate: string; returnsFiled: number }> {
     await delay(jitter(600, 400));
     return { status: 'ACTIVE', entityName: 'Resolved Entity Name', registrationDate: '2018-04-01', returnsFiled: 9 };
   },
 
-  async verifyPAN(pan: string): Promise<{ status: string; entityType: string; linked: boolean }> {
+  async verifyPAN(_pan: string): Promise<{ status: string; entityType: string; linked: boolean }> {
     await delay(jitter(300, 200));
     return { status: 'VALID', entityType: 'COMPANY', linked: true };
   },
 
-  async verifyUdyam(udyamNo: string): Promise<{ classification: string; validTill: string; isMsme: boolean }> {
+  async verifyUdyam(_udyamNo: string): Promise<{ classification: string; validTill: string; isMsme: boolean }> {
     await delay(jitter(500, 300));
     return { classification: 'MICRO', validTill: '2026-03-31', isMsme: true };
   },

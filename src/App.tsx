@@ -7,6 +7,7 @@ import { BidVerification } from './pages/BidVerification';
 import { GovtConnectors } from './pages/GovtConnectors';
 import { EligibilityRules } from './pages/EligibilityRules';
 import { AuditLog } from './pages/AuditLog';
+import { SandboxDatabase } from './pages/SandboxDatabase';
 
 const App: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const App: React.FC = () => {
               <Route path="/connectors" element={<GovtConnectors />} />
               <Route path="/rules" element={<EligibilityRules />} />
               <Route path="/audit" element={<AuditLog />} />
+              <Route path="/sandbox" element={<SandboxDatabase />} />
             </Routes>
           </main>
         </div>

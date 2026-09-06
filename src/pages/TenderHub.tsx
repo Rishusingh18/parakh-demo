@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sandboxApi } from '../services/sandboxApi';
 import type { Tender } from '../data/mockData';
-import { StatCard, TableSkeleton, SectionHeader, StatusPill } from '../components/ui';
+import { StatCard, TableSkeleton, SectionHeader } from '../components/ui';
 
 const statusBadge = (s: Tender['status']) => {
   const m = { OPEN: 'bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]', EVALUATION: 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]', AWARDED: 'bg-[#EFF4FF] text-[#0B2545] border border-[#B1C7F0]', CANCELLED: 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]' };
@@ -37,29 +37,18 @@ export const TenderHub: React.FC = () => {
       <div className="gov-card p-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-[#0B2545] text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm">ACTIVE TENDER MANAGEMENT</span>
-              <span className="bg-[#EFF4FF] text-[#0B2545] font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm border border-[#B1C7F0]">GeM SPV — MeitY Division</span>
-            </div>
+
             <h1 className="font-serif text-[28px] font-bold text-[#0B2545] leading-tight">Tender & Bid Submissions Hub</h1>
             <p className="text-[13px] text-[#44474E] mt-1">Centralized procurement evaluation workspace — Automated AI-powered bid compliance verification</p>
           </div>
           <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-3 text-right shrink-0">
             <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#44474E]">Session Active Since</div>
             <div className="font-mono text-[14px] font-bold text-[#0B2545]">09:00:00 IST, 23 MAY 2025</div>
-            <div className="font-mono text-[10px] text-[#047857] mt-0.5">● SHA-256 Ledger Sync: Active</div>
           </div>
         </div>
-
         {/* Tricolor divider */}
         <div className="mt-4 flex gap-1 h-0.5">
           <div className="flex-1 bg-[#FF9933]" /><div className="flex-1 bg-[#E2E8F0]" /><div className="flex-1 bg-[#138808]" />
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-[12px] text-[#44474E]">
-          <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[15px] text-[#047857]">check_circle</span> MSME / DPIIT Startup EMD Exemption: <strong className="text-[#0D1C2F]">ENABLED</strong></span>
-          <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[15px]">pin</span> Platform Vault SHA: <span className="font-mono text-[#0B2545]">9F8A...3D91</span></span>
-          <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[15px]">verified</span> DSC Standard: <strong className="text-[#0D1C2F]">X.509 Class 3 PKI</strong></span>
-          <span className="ml-auto font-mono text-[11px] font-bold text-[#D97706] uppercase tracking-wider">STATUS: TECHNICAL EVALUATION BENCH OPEN</span>
         </div>
       </div>
 

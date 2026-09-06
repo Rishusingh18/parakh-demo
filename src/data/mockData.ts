@@ -447,13 +447,13 @@ export const mockRules: EligibilityRule[] = [
   {
     id: 'R007', name: 'Similar Work Order (Financial)', category: 'EXPERIENCE',
     clause: '4.3.a', description: 'At least one completed similar work order of value ≥₹5 Cr within last 5 years',
-    condition: 'max_similar_order_value >= 5000000 AND order_age_years <= 5', threshold: '≥₹5 Cr', weight: 10, active: true, mandatory: false,
+    condition: 'max_similar_order_value >= 50000000 AND order_age_years <= 5', threshold: '≥₹5 Cr', weight: 10, active: true, mandatory: false,
     dslJson: '{"rule":"similar_work","min_value":50000000,"max_age_years":5,"mandatory":false}',
   },
   {
     id: 'R008', name: 'EPFO Compliance', category: 'STATUTORY',
     clause: '2.4.a', description: 'Monthly EPF contributions must be current with no outstanding arrears',
-    condition: 'epfo_status == COMPLIANT', threshold: 'Compliant', weight: 5, active: true, mandatory: false,
+    condition: 'epfo_status == COMPLIANT', threshold: 'Compliant', weight: 5, active: false, mandatory: false,
     dslJson: '{"rule":"epfo_compliance","operator":"eq","value":"COMPLIANT","source":"EPFO","mandatory":false}',
   },
   {

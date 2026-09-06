@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { sandboxApi } from '../services/sandboxApi';
 import type { GovtConnector } from '../data/mockData';
-import { SectionHeader, Skeleton } from '../components/ui';
+import { Skeleton } from '../components/ui';
 
 const statusDot = (s: GovtConnector['status']) => {
   if (s === 'ONLINE') return <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-pulse" />;

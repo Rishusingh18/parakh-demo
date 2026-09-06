@@ -5,13 +5,20 @@ import type { Bid, BidCriteria } from '../data/mockData';
 
 import { ScoreGauge, RiskBadge, StatusPill, VerifyCard, SectionHeader, TableSkeleton, Skeleton } from '../components/ui';
 
-const mockBidList = ['B001', 'B002', 'B003', 'B004'];
 const mockTenderBids = [
   { id: 'B001', bidNo: 'GEM-BID-89410', vendor: 'NexTech Infra Pvt Ltd', score: 42, status: 'DISQUALIFIED' as const },
   { id: 'B002', bidNo: 'GEM-BID-89411', vendor: 'InfoSec Systems India Ltd.', score: 91, status: 'PASSED' as const },
   { id: 'B003', bidNo: 'GEM-BID-89412', vendor: 'Quantum DataVault Pvt Ltd', score: 67, status: 'PENDING' as const },
   { id: 'B004', bidNo: 'GEM-BID-89413', vendor: 'TechNation Solutions LLP', score: 88, status: 'PASSED' as const },
 ];
+
+type ApiEvidenceResult = { status: string; detail: string; timestamp: string; evidenceHash: string };
+
+const sha256Hex = async (value: string): Promise<string> => {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+};
 
 export const BidVerification: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -25,35 +32,64 @@ export const BidVerification: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'criteria' | 'evidence'>('overview');
   const [apiLoading, setApiLoading] = useState(false);
-  const [apiResults, setApiResults] = useState<Record<string, { status: string; detail: string }>>({});
+  const [apiResults, setApiResults] = useState<Record<string, ApiEvidenceResult>>({});
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const currentBidRef = React.useRef(searchParams.get('bid') ?? 'B001');
 
   useEffect(() => {
+    let active = true;
+    sandboxApi.getBid(selectedBidId).then(b => {
+      if (active) {
+        setBid(b);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedBidId]);
+
+  const selectBid = (bidId: string) => {
+    setSelectedBidId(bidId);
+    currentBidRef.current = bidId;
     setLoading(true);
     setSubmitted(false);
     setDecision('');
     setNotes('');
     setApiResults({});
-    sandboxApi.getBid(selectedBidId).then(b => {
-      setBid(b);
-      setLoading(false);
-    });
-  }, [selectedBidId]);
+    setAiResult(null);
+  };
 
   const runApiVerification = async () => {
     if (!bid) return;
     setApiLoading(true);
-    // Simulate sequential API calls
-    const results: Record<string, { status: string; detail: string }> = {};
+    const results: Record<string, ApiEvidenceResult> = {};
+    const buildEvidence = async (api: string, status: string, detail: string): Promise<ApiEvidenceResult> => {
+      const timestamp = new Date().toISOString();
+      const evidenceHash = await sha256Hex(`${bid.id}|${api}|${status}|${detail}|${timestamp}`);
+      return { status, detail, timestamp, evidenceHash };
+    };
+
     await sandboxApi.verifyGSTIN(bid.gstin).then(r => {
-      results['GSTN'] = { status: r.status, detail: `${bid.gstin} → ${r.status} | Returns: ${r.returnsFiled}` };
+      return buildEvidence('GSTN', r.status, `${bid.gstin} → ${r.status} | Returns: ${r.returnsFiled}`);
+    }).then(result => {
+      results['GSTN'] = result;
     });
     await sandboxApi.verifyPAN(bid.pan).then(r => {
-      results['PAN'] = { status: r.status, detail: `${bid.pan} → ${r.status} | Entity: ${r.entityType}` };
+      return buildEvidence('PAN', r.status, `${bid.pan} → ${r.status} | Entity: ${r.entityType}`);
+    }).then(result => {
+      results['PAN'] = result;
     });
     await sandboxApi.verifyUdyam(bid.udyamNo).then(r => {
-      results['UDYAM'] = { status: r.isMsme ? 'VERIFIED' : 'NOT_FOUND', detail: `${bid.udyamNo} → ${r.classification} | Valid till: ${r.validTill}` };
+      return buildEvidence('UDYAM', r.isMsme ? 'VERIFIED' : 'NOT_FOUND', `${bid.udyamNo} → ${r.classification} | Valid till: ${r.validTill}`);
+    }).then(result => {
+      results['UDYAM'] = result;
     });
-    results['MCA21'] = { status: 'VERIFIED', detail: `${bid.mcaId} → Company Active | Financials fetched` };
+    results['MCA21'] = await buildEvidence('MCA21', 'VERIFIED', `${bid.mcaId} → Company Active | Financials fetched`);
+    if (currentBidRef.current !== bid.id) return;
     setApiResults(results);
     setApiLoading(false);
   };
@@ -61,9 +97,31 @@ export const BidVerification: React.FC = () => {
   const handleDecision = async () => {
     if (!decision || !bid) return;
     setSubmitting(true);
-    await sandboxApi.updateBidDecision(bid.id, decision as any, notes);
-    setSubmitting(false);
-    setSubmitted(true);
+    setErrorMsg('');
+    try {
+      const payload = { bidId: bid.id, decision, notes, apiResults };
+      const evidenceHash = await sha256Hex(JSON.stringify(payload));
+      await sandboxApi.updateBidDecision(bid.id, decision as any, notes, bid, evidenceHash);
+      setSubmitted(true);
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Error saving decision');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAiExtract = async () => {
+    if (!bid) return;
+    setAiLoading(true);
+    try {
+      const res = await sandboxApi.extractAI(bid.tenderId, bid.id);
+      if (currentBidRef.current !== bid.id) return;
+      setAiResult(res);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      if (currentBidRef.current === bid.id) setAiLoading(false);
+    }
   };
 
   const categoryGroups = bid ? {
@@ -103,7 +161,7 @@ export const BidVerification: React.FC = () => {
               {mockTenderBids.map(b => (
                 <button
                   key={b.id}
-                  onClick={() => setSelectedBidId(b.id)}
+                  onClick={() => selectBid(b.id)}
                   className={`w-full text-left px-4 py-3 transition-colors hover:bg-[#EFF4FF] ${selectedBidId === b.id ? 'bg-[#EFF4FF] border-l-4 border-l-[#D97706]' : 'border-l-4 border-l-transparent'}`}
                 >
                   <div className="font-mono text-[11px] font-bold text-[#44474E] uppercase">{b.bidNo}</div>
@@ -244,6 +302,11 @@ export const BidVerification: React.FC = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col gap-3">
+                        {errorMsg && (
+                          <div className="bg-[#FEF2F2] border border-[#FECACA] rounded p-2 text-[#B91C1C] text-sm">
+                            {errorMsg}
+                          </div>
+                        )}
                         <div className="grid grid-cols-3 gap-2">
                           {(['QUALIFY', 'DISQUALIFY', 'FLAG'] as const).map(d => (
                             <button
@@ -335,10 +398,37 @@ export const BidVerification: React.FC = () => {
                       <div>
                         <div className="font-mono text-[12px] font-bold uppercase tracking-widest text-[#0B2545]">{api} Sandbox Response</div>
                         <div className="font-mono text-[13px] text-[#0D1C2F] mt-0.5">{result.detail}</div>
-                        <div className="font-mono text-[10px] text-[#44474E] mt-0.5">Timestamp: {new Date().toISOString()} • Hash: sha256:{Math.random().toString(36).slice(2, 14)}...</div>
+                        <div className="font-mono text-[10px] text-[#44474E] mt-0.5 break-all">Timestamp: {result.timestamp} • Hash: sha256:{result.evidenceHash}</div>
                       </div>
                     </div>
                   ))}
+
+                  <div className="mt-8">
+                    <SectionHeader title="AI Document Extraction" icon="document_scanner">
+                      <button onClick={handleAiExtract} disabled={aiLoading} className="btn-secondary flex items-center gap-2 text-[13px]">
+                        {aiLoading ? <><span className="material-symbols-outlined text-[16px] animate-spin">sync</span> Processing PDF...</> : <><span className="material-symbols-outlined text-[16px]">smart_toy</span> Process PDF with AI</>}
+                      </button>
+                    </SectionHeader>
+                    {aiResult ? (
+                      <div className="bg-[#EFF4FF] border border-[#B1C7F0] rounded p-4 mt-4">
+                        <div className="font-bold text-[#0B2545] mb-2 flex justify-between">
+                          <span>Extraction Complete</span>
+                          <span className="text-[#047857]">Confidence: {Math.round(aiResult.confidence * 100)}%</span>
+                        </div>
+                        <pre className="text-xs bg-white p-2 rounded border">{JSON.stringify(aiResult.extracted_data, null, 2)}</pre>
+                        <div className="mt-2 text-xs font-mono text-[#44474E]">
+                          <strong>Citations:</strong>
+                          {aiResult.citations.map((c: any, i: number) => (
+                            <div key={i}>Page {c.page}: "{c.text}"</div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded p-4 text-center mt-4">
+                        <p className="font-mono text-[12px] text-[#44474E]">Click "Process PDF with AI" to simulate LLM extraction.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </>
