@@ -96,12 +96,16 @@ export const BidVerification: React.FC = () => {
 
   const handleDecision = async () => {
     if (!decision || !bid) return;
+    
+    const pwd = window.prompt("Enter Admin Password to authorize changes to the audit ledger (hint: admin123):");
+    if (pwd === null) return;
+
     setSubmitting(true);
     setErrorMsg('');
     try {
       const payload = { bidId: bid.id, decision, notes, apiResults };
       const evidenceHash = await sha256Hex(JSON.stringify(payload));
-      await sandboxApi.updateBidDecision(bid.id, decision as any, notes, bid, evidenceHash);
+      await sandboxApi.updateBidDecision(bid.id, decision as any, notes, bid, evidenceHash, pwd);
       setSubmitted(true);
     } catch (e: any) {
       setErrorMsg(e.message || 'Error saving decision');

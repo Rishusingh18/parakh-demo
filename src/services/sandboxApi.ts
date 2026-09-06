@@ -34,14 +34,15 @@ export const sandboxApi = {
     return mockBids.find(b => b.id === bidId) ?? null;
   },
 
-  async updateBidDecision(bidId: string, decision: 'QUALIFY' | 'DISQUALIFY' | 'FLAG', notes: string, bidData: any, evidenceHash: string): Promise<{ success: boolean; timestamp: string }> {
+  async updateBidDecision(bidId: string, decision: 'QUALIFY' | 'DISQUALIFY' | 'FLAG', notes: string, bidData: any, evidenceHash: string, pwd?: string): Promise<{ success: boolean; timestamp: string }> {
     const role = localStorage.getItem('officerRole') || 'ADMIN';
     try {
       const res = await fetch(`${API_BASE}/api/v1/audit/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Officer-Role': role
+          'X-Officer-Role': role,
+          ...(pwd ? { 'X-Officer-Password': pwd } : {})
         },
         body: JSON.stringify({
           bid_id: bidId,
@@ -56,6 +57,7 @@ export const sandboxApi = {
         })
       });
       if (!res.ok) {
+        if (res.status === 401) throw new Error('Authentication failed: invalid password');
         throw new Error('Authorization failed');
       }
     } catch (e) {

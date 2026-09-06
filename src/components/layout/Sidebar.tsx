@@ -20,14 +20,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className="fixed left-0 top-0 h-full w-72 bg-[#0B2545] z-40 flex flex-col pt-[104px] pb-4 shadow-sidebar">
-      {/* Officer Identity */}
-      <div className="px-5 py-3 mb-2 border-b border-white/20">
-        <div className="flex items-center gap-1.5 text-[#ffdcc3] font-mono text-[11px] font-bold uppercase tracking-widest">
-          <span className="material-symbols-outlined text-[15px]">verified_user</span>
-          NIC Authenticated DSC v3
-        </div>
-        <div className="font-mono text-[12px] text-[#778db2] mt-1">GOV-ID: DEL-PROC-9082</div>
-      </div>
+
 
       {/* Navigation */}
       <nav className="flex-1 px-2 flex flex-col gap-1 overflow-y-auto">
@@ -50,16 +43,7 @@ export const Sidebar: React.FC = () => {
         ))}
       </nav>
 
-      {/* Security Footer */}
-      <div className="px-4 pt-3 border-t border-white/20">
-        <div className="bg-[#001026] p-3 rounded-lg">
-          <div className="flex items-center gap-1.5 text-[#7bd8b1] font-mono text-[11px] font-bold uppercase">
-            <span className="w-2 h-2 rounded-full bg-[#7bd8b1] animate-pulse"></span>
-            SECURE NIC GATEWAY
-          </div>
-          <div className="font-mono text-[12px] text-[#778db2] mt-1">SHA-256 Ledger Locked</div>
-        </div>
-      </div>
+
     </aside>
   );
 };
