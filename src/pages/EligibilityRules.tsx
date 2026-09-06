@@ -168,18 +168,7 @@ export const EligibilityRules: React.FC = () => {
                 </div>
               </div>
 
-              {/* DSL Code Viewer */}
-              <div className="gov-card overflow-hidden">
-                <div className="bg-[#0B2545] px-4 py-2.5 flex items-center justify-between">
-                  <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-white">Rule DSL Definition (JSON)</span>
-                  <span className="font-mono text-[11px] text-[#778db2]">Read-only — Edit via Admin Console</span>
-                </div>
-                <div className="bg-[#001026] p-4 overflow-x-auto">
-                  <pre className="font-mono text-[12px] text-[#7bd8b1] leading-relaxed whitespace-pre-wrap">
-                    {JSON.stringify(JSON.parse(selected.dslJson), null, 2)}
-                  </pre>
-                </div>
-              </div>
+
 
               {/* Application Note */}
               <div className="bg-[#EFF4FF] border border-[#B1C7F0] rounded p-4 flex items-start gap-3">
@@ -191,6 +180,8 @@ export const EligibilityRules: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+
             </div>
           ) : (
             <div className="gov-card p-8 text-center">
